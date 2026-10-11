@@ -1,4 +1,7 @@
 import yfinance as yf
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
 
 ticker = "THYAO.IS"
 
@@ -56,6 +59,48 @@ X_test = X.iloc[split_index:]
 
 y_train = y.iloc[:split_index]
 y_test = y.iloc[split_index:]
+
+
+# Scale features
+scaler = StandardScaler()
+
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Create and train the model
+model = LogisticRegression()
+
+model.fit(X_train_scaled, y_train)
+
+print("\nLogistic Regression model trained successfully.")
+
+# Make predictions on the test data
+y_pred = model.predict(X_test_scaled)
+y_proba = model.predict_proba(X_test_scaled)[:, 1]
+
+# Evaluate model performance
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix
+)
+
+print("\n--- Model Evaluation ---")
+
+print(f"Accuracy:  {accuracy_score(y_test, y_pred):.4f}")
+print(f"Precision: {precision_score(y_test, y_pred, zero_division=0):.4f}")
+print(f"Recall:    {recall_score(y_test, y_pred, zero_division=0):.4f}")
+print(f"F1 Score:  {f1_score(y_test, y_pred, zero_division=0):.4f}")
+
+if y_test.nunique() == 2:
+    print(f"ROC-AUC:   {roc_auc_score(y_test, y_proba):.4f}")
+
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
 
 print("\nTraining data:")
 print("X_train:", X_train.shape)
