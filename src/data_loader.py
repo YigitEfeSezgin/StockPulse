@@ -1,6 +1,15 @@
 import yfinance as yf
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix
+)
 
 
 ticker = "THYAO.IS"
@@ -76,7 +85,36 @@ print("\nLogistic Regression model trained successfully.")
 
 # Make predictions on the test data
 y_pred = model.predict(X_test_scaled)
+
+# Baseline model: always predict the majority class in training data
+majority_class = y_train.mode()[0]
+
+baseline_pred = [majority_class] * len(y_test)
+
+baseline_accuracy = accuracy_score(y_test, baseline_pred)
+
+print("\n--- Baseline Model ---")
+print(f"Majority class: {majority_class}")
+print(f"Baseline Accuracy: {baseline_accuracy:.4f}")
+
 y_proba = model.predict_proba(X_test_scaled)[:, 1]
+# Inspect prediction probabilities
+print("\n--- Prediction Probability Analysis ---")
+print(f"Minimum UP probability: {y_proba.min():.4f}")
+print(f"Maximum UP probability: {y_proba.max():.4f}")
+print(f"Mean UP probability:    {y_proba.mean():.4f}")
+
+print("\nFirst 10 predictions:")
+prediction_results = pd.DataFrame(
+    {
+        "Actual": y_test,
+        "Predicted": y_pred,
+        "UP_Probability": y_proba,
+    },
+    index=y_test.index,
+)
+
+print(prediction_results.head(10))
 
 # Evaluate model performance
 from sklearn.metrics import (
@@ -100,6 +138,25 @@ if y_test.nunique() == 2:
 
 print("\nConfusion Matrix:")
 print(confusion_matrix(y_test, y_pred))
+# Analyze prediction distribution
+print("\n--- Prediction Distribution ---")
+
+print("Actual labels:")
+print(y_test.value_counts().sort_index().rename(index={
+    0: "DOWN",
+    1: "UP"
+}))
+
+print("\nPredicted labels:")
+print(
+    pd.Series(y_pred)
+    .value_counts()
+    .sort_index()
+    .rename(index={
+        0: "DOWN",
+        1: "UP"
+    })
+)
 
 
 print("\nTraining data:")
